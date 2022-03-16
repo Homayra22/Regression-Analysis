@@ -1,0 +1,63 @@
+---
+title: "p4.18"
+author: "Homayra Alam A04985568"
+date: "3/23/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(MPV)
+library(tidyverse)
+library(qqplotr)
+```
+
+
+```{r}
+model <- lm(y~x1+x2+x3, data =p4.18)
+summary(model)
+plot(model)
+plot(model, pch=18,color="red",which=c(4))
+```
+
+
+
+```{r}
+model.2 <- lm(y~x1+x2, data =p4.18)
+summary(model.2)
+plot(model.2)
+plot(model.2, pch=18,col="red",which=c(4))
+```
+```{r}
+model.3 <- lm(y~x1+x3, data =p4.18)
+summary(model.3)
+plot(model.3)
+plot(model.3, pch=18,col="red",which=c(4))
+```
+```{r}
+model.4 <- lm(y~x2+x3, data =p4.18)
+summary(model.4)
+plot(model.4)
+plot(model.4, pch=18,col="red",which=c(4))
+```
+
+### Fitted vs. Residual
+```{r}
+data.frame(fitted = predict(model), error = resid(model),r = rstandard(model) ) -> assess
+assess%>%ggplot(aes(fitted, error))+geom_point()+geom_hline(yintercept = 0, color = "red", linetype = 2)
+```
+
+###  QQ Plot of Residuals
+```{r}
+assess%>%ggplot(aes(sample = r))+geom_qq()+geom_qq_line(color = "red", linetype = 2)
+```
+```{r}
+library(qqplotr)
+assess%>%ggplot(aes(sample = r)) +
+stat_qq_band() +
+stat_qq_line() +
+stat_qq_point() +
+labs(title =  "QQ Plot of Residuals", x = "Theoretical Quantiles", y = "Studentized Residuals")
+```
+
+
