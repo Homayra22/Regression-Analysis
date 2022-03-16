@@ -1,0 +1,262 @@
+---
+title: "HW 3: Due Feb 17"
+author: "Soma Sarker"
+date: "2/16/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## HW Description
+
+This homework is structured differently from the last one.  There are two "problems" each with multiple parts.
+
+Part 1: Data Visualization is designed to get you to practice using *ggplot* to visualize data.  In each part I provide some starter code to demonstrate a visualization.  Modify this code to answer the question.  
+
+Part 2:  Informal Modeling.  Here you use data visualization to informally compare different models.  Then use a data splitting techniqe.  You fit the model (using the lm function) you selected on part one of the data, and then test the fitted model on the second half of the data, to see how the model worked.  We will restrict ourselves to models involving at most two predictors.  The predictor(s) could be categorical, or you could use a polynomial in the predictor.
+
+
+## Set up
+
+You need to include the correct package.
+
+```{r}
+library(tidyverse)
+```
+
+
+The data set, *diamonds*, is inlcude with R and describes a set of characteristics for a large sample of diamonds.  To see a desciption of the variables, etc.  Use the help feature in R.
+
+```{r}
+? diamonds
+```
+
+To see the data, use the R Studio command View.
+
+```{r}
+View(diamonds)
+```
+
+##  Part 1 Data Visualization
+
+###  Visulaizing Categorical Variables
+
+In this class we will call a categorical predicator a **factor**.  The different values it takes on are levels.  We use the *geom_bar* command to make bar charts.
+
+```{r}
+diamonds%>%ggplot(aes(x = color)) +
+  geom_bar()+
+  labs(title = "Frequency of Different Colors of Diamonds")
+```
+
+#### a.  Make a barchart for the *color* of the diamonds.  What are the levels for the factor color?  Describe the graph. 
+Though D is best color according to data frequency of color H is higher than D. G's frequency is highest which is in nor good or bad, kind of nutral position. From Best to the nutral position frequency has increased and after that frequency has decreased.
+
+
+###  Visualizing Continuous Variables
+
+To visualize continuous variables we can make box plots, density plots and histograms.   We can see that the prices are skewed right.  
+
+```{r}
+diamonds%>%ggplot(aes(x = carat))+geom_histogram()
+```
+
+A density estimate is smooth version of the histogram. The graph shows high count for low amount of carat(0.05 Carat). The graph is right skewed. But it swows some peaks in between the amount of carat(in 1, 1.5 and 2 weight of carat).
+
+```{r}
+diamonds%>%ggplot(aes(x = carat))+geom_density()
+```
+#### b.  "carat" is a measure of the weight of a dimaond.  Make a histogram of the *carat* variable.  Describe the graph.
+
+
+
+### Graphing a quantitative measurement vs. a factor
+
+Box plots are best for simple comparaison of a continuous variable across levels of factor.  
+
+```{r}
+ggplot(data = diamonds, mapping = aes(x = color, y = price)) +
+  geom_boxplot()
+```
+The carat variable is skewed for maximum values of the color.  Note that the median prive seem to be uniform with the quality of the color.
+
+You can use the histogram and/or density as well.  But because one graph covers the other, you need to use other arguments.  E.g. we can set the opacity using *alpha*. So we can through the graph of one density to the one underneath.
+
+```{r}
+theme_set(theme_classic())
+
+diamonds%>%ggplot(aes(price)) + 
+    geom_density(aes(fill= color), alpha=0.8) + 
+    labs(title="Density Plot", 
+         subtitle="price Grouped by color of Diamond",
+         caption="Source: diamonds",
+         x="price of Diamond",
+         fill="Color")
+```
+The overlap is still makes it hard to see.  So we can use facet.  
+
+
+```{r}
+theme_set(theme_classic())
+
+diamonds%>%ggplot(aes(price)) + 
+    geom_density(aes(fill= color), alpha=0.8) + 
+    labs(title="Density Plot", 
+         subtitle="color Grouped by price of Diamond",
+         caption="Source: diamonds",
+         x="price of Diamond",
+         fill="color")+
+         facet_grid(color~.)
+```
+The graph shows that price for different colors are right skewed. Different normal distribution can be seen for different price of different color.
+
+#### c.  Make a graph of Price vs. color.  Describe the graph. 
+
+### Two quantitative variables.
+
+We have used the scatter plot to display two quantitative variables.  We can add *geom_smooth* to graph the trend on top.
+
+```{r}
+diamonds%>%ggplot(aes(x=table, y = price))+geom_point()+
+  geom_smooth()+
+  labs("Using General Additive Model to show trend")
+```
+
+
+We are fitting linear models in this class, so we can force *geom_smooth* to fit a line instead.
+
+```{r}
+diamonds%>%ggplot(aes(x=table, y = price))+geom_point()+
+  geom_smooth(method = "lm")+
+  labs("Using linear model to show trend")
+```
+
+Note the plot indicates that we should perhaps be treating really large diamonds differently.  Also, there seems to be a ceiling on the price of the diamond.  The data description in R does not mention how the price data was collected, but the graph indicates that only diamonds under $20K are included.
+
+It can be helpful to include the univariate graphs.  We can do this with the *ggextra* package.
+
+
+```{r}
+library(ggExtra)
+
+p<- diamonds%>%ggplot(aes(x=table, y = price))+geom_point()+
+  geom_smooth(method = "lm")+
+  labs("Using linear model to show trend")
+ 
+# with marginal histogram
+ggMarginal(p, type="histogram")
+ 
+```
+
+
+### Cleaning up the data
+
+
+Before we proceed.  Let's modify the data to deal with the outliers and help with the celing effect.  Since we have a lot of data, our plots can be misleading since points cover each up.  In addition, if we split our data we can use one part for informal modeling and one part for testing.   So lets remove the outliers and take a subsample
+
+```{r}
+subsample = sample(nrow(diamonds), nrow(diamonds)/5)
+diam <- (diamonds%>%filter(table<=70))[subsample,] 
+
+```
+
+### More variables in a plot
+
+We can add categorical variables to our plots and to our informal model.  To save typing we can save ggplot code in an R object and add features as we go along.
+
+```{r}
+p<- diam%>%ggplot(aes(x=table, y = price))
+
+p+geom_point(aes(color = color)) + geom_smooth(aes(color = color))
+```
+
+The data indicate that a transformation of the data is needed before fitting a linear model. 
+
+```{r}
+p<- diam%>%ggplot(aes(x=table, y = log(price)))
+
+p+geom_point(aes(color = color)) + geom_smooth(aes(color = color), method = "lm")
+```
+This graph indicates that the linear model for the Fair level may be different than the rest.
+
+```{r}
+p<- diam%>%mutate(I = factor(if_else(color == "I", 1, 0), labels = c("Other", "I")))%>% ggplot(aes(x=table, y = log(price)))
+
+p+geom_point(aes(color = I), alpha = .8) + geom_smooth(aes(color = I), method = "lm")
+```
+Note that the slope and intercepts are differnt.  
+
+#### d.  Make a similar graph for Price vs. table and color
+
+## Part 2 Informal Modeling
+
+After using graphs to investigate the data, we can fit a linear model. 
+
+```{r}
+diam2 = diam%>%mutate(I = factor(if_else(color == "I", 1, 0), labels = c("Other", "I")))
+model <- lm(log(price)~table*I, data = diam2)
+```
+
+
+In addition to the graphs we have made, we can test the model we fit using our subsample on the rest of the data.  We predict the log table on *diam.rest* and compute a R-squared analog.
+
+```{r}
+diam.rest = diamonds[-subsample,]%>%mutate(I = factor(if_else(color == "I", 1, 0), labels = c("Other", "I")))
+
+sse = sum((predict(model, newdata = diam.rest)-log(diam.rest$price))^2)
+
+syy = var(log(diam.rest$price))*(nrow(diam.rest)-1)
+
+r2 = 1 - sse/syy
+r2
+
+```
+The resulting R-square analog is .03 which too much lower than the .8804 we computed in the data we used to find the model. It is expected to be lower, since the model we fit is the best possible model (in the LS sense) for diam2 and the predictors chosen.  What we are on the watch out for are models which have a high R-square for the data we used to fit the model, but a low R-square for the test data.  This would indicate that we parfectly fitted the data, i.e. chasing common characteristics of our data set.  
+
+#### HW part 2.  Find a model for price that includes one continuous predictor and one categorical predictor for diamonds data set.  As we did above, remove the heavy diamonds before fitting.   Justify your model graphically and by testing it on the hold out sample as we did above.  
+
+
+```{r}
+subsample = sample(nrow(diamonds), nrow(diamonds)/5)
+diam <- (diamonds%>%filter(carat<=2))[subsample,] 
+
+```
+
+
+```{r}
+p<- diam%>%ggplot(aes(x=carat, y = price))
+
+p+geom_point(aes(color = color)) + geom_smooth(aes(color = color))
+```
+```{r}
+p<- diam%>%ggplot(aes(x=carat, y = log(price)))
+
+p+geom_point(aes(color = color)) + geom_smooth(aes(color = color), method = "lm")
+```
+```{r}
+p<- diam%>%mutate(I = factor(if_else(color == "I", 1, 0), labels = c("Other", "I")))%>% ggplot(aes(x=carat, y = log(price)))
+
+p+geom_point(aes(color = I), alpha = .8) + geom_smooth(aes(color = I), method = "lm")
+```
+```{r}
+diam2 = diam%>%mutate(I = factor(if_else(color == "I", 1, 0), labels = c("Other", "I")))
+model <- lm(log(price)~carat*I, data = diam2)
+```
+
+
+In addition to the graphs we have made, we can test the model we fit using our subsample on the rest of the data.  We predict the log table on *diam.rest* and compute a R-squared analog.
+
+```{r}
+diam.rest = diamonds[-subsample,]%>%mutate(I = factor(if_else(color == "I", 1, 0), labels = c("Other", "I")))
+
+sse = sum((predict(model, newdata = diam.rest)-log(diam.rest$price))^2)
+
+syy = var(log(diam.rest$price))*(nrow(diam.rest)-1)
+
+r2 = 1 - sse/syy
+r2
+
+```
+The resulting R-square analog is .83 which is lower but not by too much than the .8804 we computed in the data we used to find the model.  It is expected t be lower, since the model we fit is the best possible model (in the LS sense) for diam2 and the predictors chosen.  What we are on the watch out for are models which have a high R-square for the data we used to fit the model, but a low R-square for the test data.This would indicate that we overfit the data, i.e. chasing idiosyncratic characteristics of our data set. 
