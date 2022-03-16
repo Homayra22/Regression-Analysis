@@ -1,0 +1,61 @@
+---
+title: "HW_02_01"
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
+---
+
+```{r}
+plot(visc~ratio,data=p2.14)
+
+```
+\item{Predicted Model}
+
+$$\hat{y} = 0.6714 + (-0.2964) x$$
+
+
+
+
+
+```{r}
+lm(visc~ratio,data=p2.14)->reg
+summary(reg)
+```
+
+
+
+
+```{r}
+coefficients(reg)
+# Now to predict the viscosity for 0.80
+coefficients(reg)%*%c(1,0.80)
+
+```
+#
+
+```{r}
+summary(reg)$sigma
+```
+
+
+
+```{r}
+confint(reg)
+predict(reg, newdata =data.frame(ratio = 8), interval = "conf")
+predict(reg, newdata =data.frame(ratio = 8), interval = "pred" )
+```
+
+```{r}
+xs <-seq(0.2, 1, .001)
+plot.band = p2.14%>%ggplot(aes(ratio,visc))+geom_point()+geom_smooth(method = "lm")
+pred = as.data.frame(cbind(xs,predict(reg, newdata =data.frame(ratio = xs),
+                                      interval = "prediction")))
+plot.band+geom_line(data = pred,aes(xs, upr), color = "red")+geom_line(data = pred,aes(xs, lwr), color = "red")
+```
+
+
+
+```{r}
+
+```
